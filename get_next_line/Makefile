@@ -2,9 +2,10 @@ C_SRC = get_next_line.c get_next_line_utils.c main.c
 
 COMP = clang
 
-COMP_FLAGS = -Wall -Werror -Wextra -D
+COMP_FLAGS = -Wall -Werror -Wextra -fsanitize=address
+COMP_FLAGS_VAL = -Wall -Werror -Wextra -g
 
-BUFFER = BUFFER_SIZE=3
+BUFFER = -D BUFFER_SIZE=5
 
 RUN = ./a.out
 
@@ -27,3 +28,7 @@ corrupt:
 	find .git/objects/ -type f -empty | xargs rm
 	git fetch -p
 	git fsck --full
+
+valgrind:
+	$(COMP) $(COMP_FLAGS_VAL) $(BUFFER) $(C_SRC)
+	valgrind --leak-check=full  ./a.out

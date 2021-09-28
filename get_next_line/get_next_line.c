@@ -6,33 +6,52 @@
 /*   By: rdaltio- <rdaltio-@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/08/21 10:48:22 by rdaltio-          #+#    #+#             */
-/*   Updated: 2021/09/21 21:19:59 by rdaltio-         ###   ########.fr       */
+/*   Updated: 2021/09/28 19:46:01 by rdaltio-         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "get_next_line.h"
 
-static size_t	ft_count_to_end(char *line)
+static char	*ft_substr(char *s, unsigned int start, size_t len)
 {
-	int	count;
+	char	*str;
+	size_t	s_len;
 
-	count = 0;
-	while (line[count] != '\n')
-		count++;
-	return (count);
+	if (!s)
+		return (0);
+	s_len = ft_strlen(s);
+	if (start > s_len)
+	{
+		len = 0;
+		start = s_len;
+	}
+	if (len > s_len - start)
+		len = s_len - start;
+	str = (char *)malloc((len + 1) * sizeof(char));
+	if (!str)
+		return (0);
+	ft_strlcpy(str, s + start, len + 1);
+	free(s);
+	return (str);
 }
 
-static char	*ft_check_leak(char *leak, char *line)
+static char	*ft_strjoin(char *s1, char const *s2)
 {
-	int	start;
+	char	*str;
+	size_t	dstsize;
 
-	start = ft_count_to_end(line);
-	if (start == 0)
-		start = 1;
-	else
-		start = ft_count_to_end(line) + 1;
-	leak = ft_strdup(&line[start]);
-	return (leak);
+	if (!s1)
+		return ((char *)s2);
+	if (!s2)
+		return ((char *)s1);
+	dstsize = ft_strlen(s1) + ft_strlen(s2) + 1;
+	str = (char *)malloc(dstsize * sizeof(*str));
+	if (!str)
+		return (0);
+	ft_strlcpy(str, s1, ft_strlen(s1) + 1);
+	ft_strlcat(str, s2, dstsize);
+	free(s1);
+	return (str);
 }
 
 char	*get_next_line(int fd)
@@ -41,48 +60,40 @@ char	*get_next_line(int fd)
 	char		*buffer;
 	static char	*leak;
 	size_t		bytes_to_read;
-	size_t		count;
-	size_t		start;
 
-	bytes_to_read = 1;
-	count = 0;
 	if (fd < 0 || BUFFER_SIZE <= 0)
-		return (0);
-	buffer = (char *)malloc((BUFFER_SIZE + 1) * sizeof(*buffer));
-	line = (char *)malloc((BUFFER_SIZE + 1) * sizeof(*line));
+		return (NULL);
+	buffer = (char *)malloc((BUFFER_SIZE + 1) * sizeof(buffer));
+	if (!buffer)
+		return (NULL);
+	if (!leak)
+		leak = ft_strdup("");
+	line = ft_strdup(leak);
+	free(leak);
+	bytes_to_read = 1;
 	while (bytes_to_read)
 	{
 		bytes_to_read = read(fd, buffer, BUFFER_SIZE);
 		buffer[bytes_to_read] = '\0';
-		if (!ft_strchr(buffer, '\n'))
+		if (bytes_to_read < 0)
 		{
-			if (leak)
-			{
-				line = ft_strdup(leak);
-				free(leak);
-			}
-			line = ft_strjoin(line, buffer);
+			free(line);
+			free(buffer);
+			return (NULL);
 		}
-		else
+		line = ft_strjoin(line, buffer);
+		free(buffer);
+		if (ft_strchr(line, '\n'))
 		{
-			bytes_to_read = ft_count_to_end(buffer);
-				if (leak)
-			{
-				line = ft_strdup(leak);
-				free(leak);
-			}
-			start = ft_strlen(line);
-			leak = ft_check_leak(leak, buffer);
-			while (bytes_to_read)
-			{
-				line[start] = buffer[count];
-				start++;
-				count++;
-				bytes_to_read--;
-			}
-			break;
+			leak = ft_strdup(ft_strchr(line, '\n') + 1);
+			line = ft_substr(line, 0, ft_strlen(line) - ft_strlen(leak));
+			break ;
 		}
 	}
-	// printf("Leak: %s \n", leak);
+	if (!bytes_to_read && line[bytes_to_read] == '\0')
+	{
+		free(line);
+		return (NULL);
+	}
 	return (line);
 }
