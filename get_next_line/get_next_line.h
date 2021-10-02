@@ -5,15 +5,14 @@
 /*                                                    +:+ +:+         +:+     */
 /*   By: rdaltio- <rdaltio-@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2021/08/21 10:48:25 by rdaltio-          #+#    #+#             */
-/*   Updated: 2021/09/28 19:43:04 by rdaltio-         ###   ########.fr       */
+/*   Created: 2021/08/31 23:12:49 by rdaltio-          #+#    #+#             */
+/*   Updated: 2021/09/30 23:37:20 by rdaltio-         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #ifndef GET_NEXT_LINE_H
 # define GET_NEXT_LINE_H
 
-# include <stdio.h>
 # include <stdlib.h>
 # include <unistd.h>
 

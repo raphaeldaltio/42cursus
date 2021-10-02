@@ -5,8 +5,8 @@
 /*                                                    +:+ +:+         +:+     */
 /*   By: rdaltio- <rdaltio-@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2021/08/21 10:48:22 by rdaltio-          #+#    #+#             */
-/*   Updated: 2021/09/28 19:46:01 by rdaltio-         ###   ########.fr       */
+/*   Created: 2021/08/31 23:12:49 by rdaltio-          #+#    #+#             */
+/*   Updated: 2021/10/01 22:07:31 by rdaltio-         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -32,6 +32,7 @@ static char	*ft_substr(char *s, unsigned int start, size_t len)
 		return (0);
 	ft_strlcpy(str, s + start, len + 1);
 	free(s);
+	s = NULL;
 	return (str);
 }
 
@@ -51,49 +52,59 @@ static char	*ft_strjoin(char *s1, char const *s2)
 	ft_strlcpy(str, s1, ft_strlen(s1) + 1);
 	ft_strlcat(str, s2, dstsize);
 	free(s1);
+	s1 = NULL;
 	return (str);
 }
 
-char	*get_next_line(int fd)
+char	*ft_is_end_file(ssize_t	bytes_to_read, char *line)
 {
-	char		*line;
-	char		*buffer;
-	static char	*leak;
-	size_t		bytes_to_read;
-
-	if (fd < 0 || BUFFER_SIZE <= 0)
-		return (NULL);
-	buffer = (char *)malloc((BUFFER_SIZE + 1) * sizeof(buffer));
-	if (!buffer)
-		return (NULL);
-	if (!leak)
-		leak = ft_strdup("");
-	line = ft_strdup(leak);
-	free(leak);
-	bytes_to_read = 1;
-	while (bytes_to_read)
-	{
-		bytes_to_read = read(fd, buffer, BUFFER_SIZE);
-		buffer[bytes_to_read] = '\0';
-		if (bytes_to_read < 0)
-		{
-			free(line);
-			free(buffer);
-			return (NULL);
-		}
-		line = ft_strjoin(line, buffer);
-		free(buffer);
-		if (ft_strchr(line, '\n'))
-		{
-			leak = ft_strdup(ft_strchr(line, '\n') + 1);
-			line = ft_substr(line, 0, ft_strlen(line) - ft_strlen(leak));
-			break ;
-		}
-	}
 	if (!bytes_to_read && line[bytes_to_read] == '\0')
 	{
 		free(line);
 		return (NULL);
 	}
+	return (line);
+}
+
+static char	*ft_reading(int fd, char *line, char **leak)
+{
+	char	buffer[BUFFER_SIZE + 1];
+	ssize_t	bytes_to_read;
+
+	bytes_to_read = 1;
+	while (bytes_to_read)
+	{
+		bytes_to_read = read(fd, buffer, BUFFER_SIZE);
+		if (bytes_to_read < 0)
+		{
+			free(line);
+			line = NULL;
+			return (NULL);
+		}
+		buffer[bytes_to_read] = '\0';
+		line = ft_strjoin(line, buffer);
+		if (ft_strchr(line, '\n'))
+		{
+			*leak = ft_strdup(ft_strchr(line, '\n') + 1);
+			line = ft_substr(line, 0, ft_strlen(line) - ft_strlen(*leak));
+			break ;
+		}
+	}
+	return (ft_is_end_file(bytes_to_read, line));
+}
+
+char	*get_next_line(int fd)
+{
+	char		*line;
+	static char	*leak;
+
+	if (fd < 0 || BUFFER_SIZE <= 0 || fd > 256)
+		return (NULL);
+	if (!leak)
+		leak = ft_strdup("");
+	line = ft_strdup(leak);
+	free(leak);
+	leak = NULL;
+	line = ft_reading(fd, line, &leak);
 	return (line);
 }
